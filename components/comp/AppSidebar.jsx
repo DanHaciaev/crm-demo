@@ -1,0 +1,67 @@
+"use client"
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+} from "@/components/ui/sidebar"
+import { User } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { format } from "date-fns"
+import Link from "next/link"
+
+export function AppSidebar() {
+  const pathname = usePathname()
+  const today = format(new Date(), "dd MMM yyyy")
+
+  const links = [
+    { name: "Dashboard", href: "/" },
+    { name: "Clients", href: "/clients" },
+    { name: "Tasks", href: "/tasks" },
+  ]
+
+  return (
+    <Sidebar className="bg-zinc-900 text-white border-r border-zinc-800">
+      {/* Header */}
+      <SidebarHeader className="p-4 text-xl font-semibold tracking-wide border-b border-zinc-800">
+        CRM DEMO
+      </SidebarHeader>
+
+      {/* Menu */}
+      <SidebarContent className="p-2">
+        <SidebarMenu>
+          {links.map((link) => {
+            const isActive = pathname === link.href
+
+            return (
+              <SidebarMenuItem key={link.name}>
+                <SidebarMenuButton
+                  asChild
+                  className={`w-full justify-start rounded-lg px-3 py-2 text-sm transition ${
+                    isActive
+                      ? "bg-zinc-800 text-white"
+                      : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                  }`}
+                >
+                  <Link href={link.href}>{link.name}</Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
+        </SidebarMenu>
+      </SidebarContent>
+
+      {/* Footer */}
+      <SidebarFooter className="flex flex-row items-center justify-between mt-auto border-t border-zinc-800 p-4 text-xs text-zinc-400">
+        <span>Today: {today}</span>
+        <Link href="/user">
+          <User className="w-4 h-4 text-zinc-400 hover:text-white transition-colors" />
+        </Link>
+      </SidebarFooter>
+    </Sidebar>
+  )
+}
