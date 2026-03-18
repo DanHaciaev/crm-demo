@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import client from "@/api/client";
+import client from "@/app/api/client";
 
 const COLUMN_LABELS = {
   created: "Создано",

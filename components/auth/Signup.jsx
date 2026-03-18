@@ -5,7 +5,7 @@ import { Label } from "../ui/label";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 
-import client from "@/api/client";
+import client from "@/app/api/client";
 
 const Signup = () => {
   const handleSignup = async (e) => {

@@ -4,7 +4,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/comp/AppSidebar";
 import UserPage from "@/components/comp/User";
 import { Button } from "@/components/ui/button";
-import client from "@/api/client";
+import client from "@/app/api/client";
 
 export default function User() {
   const handleSignOut = async () => {

@@ -9,7 +9,7 @@ import {
   XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import client from "@/api/client";
+import client from "@/app/api/client";
 
 const COLORS = [
   "#3B82F6", "#22C55E", "#F59E0B", "#EF4444",

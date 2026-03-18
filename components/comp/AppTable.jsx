@@ -3,7 +3,7 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useEffect, useState, useCallback } from "react";
-import client from "@/api/client";
+import client from "@/app/api/client";
 
 const EMPTY_FORM = { name: "", company: "", phone_number: "", email: "" };
 

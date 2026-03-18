@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import useAuth from "@/hooks/useAuth";
-import client from "@/api/client";
+import client from "@/app/api/client";
 
 export default function UserPage() {
   const { user, profile, loading } = useAuth();

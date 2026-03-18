@@ -7,7 +7,7 @@ import { Label } from "../ui/label";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import client from "@/api/client";
+import client from "@/app/api/client";
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
