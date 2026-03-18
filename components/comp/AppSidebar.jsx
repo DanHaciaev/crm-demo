@@ -23,6 +23,7 @@ export function AppSidebar() {
     { name: "Clients", href: "/clients" },
     { name: "Tasks", href: "/tasks" },
     { name: "Users", href: "/users" },
+    { name: "Report", href: "/report" },
   ]
 
   return (
