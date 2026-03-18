@@ -15,16 +15,13 @@ function CreateModal({ onClose, onCreated }) {
   async function handleSubmit() {
     if (!form.email || !form.password) return;
     setSaving(true);
-
     const res = await fetch("/api/create-user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
-
     const result = await res.json();
     setSaving(false);
-
     if (!res.ok) return alert("Ошибка: " + result.error);
     onCreated();
     onClose();
@@ -126,6 +123,27 @@ function EditModal({ onClose, onSubmit, form, setForm, loading }) {
   );
 }
 
+function ConfirmModal({ name, onClose, onConfirm, loading }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
+        <h2 className="text-lg font-semibold">Удалить пользователя?</h2>
+        <p className="text-sm text-gray-500">
+          Вы уверены, что хотите удалить <span className="font-medium text-black">{name}</span>? Это действие необратимо.
+        </p>
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg border hover:bg-gray-50 transition">
+            Отмена
+          </button>
+          <button onClick={onConfirm} disabled={loading} className="px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition">
+            {loading ? "Удаление..." : "Удалить"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RoleBadge({ role }) {
   return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${role === "admin" ? "bg-black text-white" : "bg-gray-100 text-gray-600"}`}>{role ?? "user"}</span>;
 }
@@ -138,6 +156,7 @@ export function UsersTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ first_name: "", last_name: "", role: "user" });
   const [saving, setSaving] = useState(false);
@@ -168,6 +187,21 @@ export function UsersTable() {
     if (error) return alert("Ошибка: " + error.message);
     setUsers((prev) => prev.map((u) => (u.id === editTarget.id ? { ...u, ...form } : u)));
     setEditTarget(null);
+  }
+
+  // ── Delete ─────────────────────────────────────────────
+  async function handleDelete() {
+    setSaving(true);
+    const res = await fetch("/api/delete-user", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: deleteTarget.id }),
+    });
+    const result = await res.json();
+    setSaving(false);
+    if (!res.ok) return alert("Ошибка: " + result.error);
+    setUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id));
+    setDeleteTarget(null);
   }
 
   // ── Render ─────────────────────────────────────────────
@@ -215,9 +249,14 @@ export function UsersTable() {
                   </TableCell>
                   <TableCell className="text-center">{new Date(u.created_at).toLocaleDateString("ru-RU")}</TableCell>
                   <TableCell className="text-center">
-                    <button onClick={() => openEdit(u)} className="px-3 py-1 text-xs rounded-md border hover:bg-gray-50 transition">
-                      Изменить
-                    </button>
+                    <div className="flex justify-center gap-2">
+                      <button onClick={() => openEdit(u)} className="px-3 py-1 text-xs rounded-md border hover:bg-gray-50 transition">
+                        Изменить
+                      </button>
+                      <button onClick={() => setDeleteTarget(u)} className="px-3 py-1 text-xs rounded-md border border-red-200 text-red-500 hover:bg-red-50 transition">
+                        Удалить
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -229,6 +268,15 @@ export function UsersTable() {
       {createOpen && <CreateModal onClose={() => setCreateOpen(false)} onCreated={fetchUsers} />}
 
       {editTarget && <EditModal form={form} setForm={setForm} loading={saving} onClose={() => setEditTarget(null)} onSubmit={handleEdit} />}
+
+      {deleteTarget && (
+        <ConfirmModal
+          name={[deleteTarget.first_name, deleteTarget.last_name].filter(Boolean).join(" ") || deleteTarget.email || "пользователя"}
+          loading={saving}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDelete}
+        />
+      )}
     </>
   );
 }

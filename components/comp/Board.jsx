@@ -1,29 +1,28 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import client from "@/app/api/client";
+import useAuth from "@/hooks/useAuth";
 
 const COLUMN_LABELS = {
-  created: "Создано",
+  created:     "Создано",
   in_progress: "В работе",
-  review: "Ревью",
-  changes: "Правки",
-  done: "Готово",
+  review:      "Ревью",
+  changes:     "Правки",
+  done:        "Готово",
 };
 
 const COLUMN_CARD_STYLE = {
-  created: { bg: "#94A3B8", text: "#fff" },
+  created:     { bg: "#94A3B8", text: "#fff" },
   in_progress: { bg: "#F59E0B", text: "#fff" },
-  review: { bg: "#3B82F6", text: "#fff" },
-  changes: { bg: "#EF4444", text: "#fff" },
-  done: { bg: "#22C55E", text: "#fff" },
+  review:      { bg: "#3B82F6", text: "#fff" },
+  changes:     { bg: "#EF4444", text: "#fff" },
+  done:        { bg: "#22C55E", text: "#fff" },
 };
 
-// ── Shared Task Form Fields ────────────────────────────
 function TaskFormFields({ form, setForm, users }) {
   return (
     <div className="space-y-3">
@@ -55,9 +54,7 @@ function TaskFormFields({ form, setForm, users }) {
           onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
         >
           {Object.entries(COLUMN_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
+            <option key={value} value={value}>{label}</option>
           ))}
         </select>
       </div>
@@ -80,14 +77,8 @@ function TaskFormFields({ form, setForm, users }) {
   );
 }
 
-// ── Add Task Modal ─────────────────────────────────────
 function AddTaskModal({ defaultStatus, onClose, onAdd, users }) {
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    status: defaultStatus,
-    assigned_to: "",
-  });
+  const [form, setForm] = useState({ title: "", description: "", status: defaultStatus, assigned_to: "" });
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit() {
@@ -96,8 +87,7 @@ function AddTaskModal({ defaultStatus, onClose, onAdd, users }) {
     const { data, error } = await client
       .from("tasks")
       .insert([{ ...form, assigned_to: form.assigned_to || null }])
-      .select()
-      .single();
+      .select().single();
     setSaving(false);
     if (error) return alert("Ошибка: " + error.message);
     onAdd(data);
@@ -110,9 +100,7 @@ function AddTaskModal({ defaultStatus, onClose, onAdd, users }) {
         <h2 className="text-lg font-semibold">Новая задача</h2>
         <TaskFormFields form={form} setForm={setForm} users={users} />
         <div className="flex justify-end gap-2 pt-2">
-          <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg border hover:bg-gray-50 transition">
-            Отмена
-          </button>
+          <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg border hover:bg-gray-50 transition">Отмена</button>
           <button onClick={handleSubmit} disabled={saving || !form.title.trim()} className="px-4 py-2 text-sm rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50 transition">
             {saving ? "Сохранение..." : "Добавить"}
           </button>
@@ -122,16 +110,13 @@ function AddTaskModal({ defaultStatus, onClose, onAdd, users }) {
   );
 }
 
-// ── Edit Task Modal ────────────────────────────────────
 function EditTaskModal({ task, onClose, onSave, onDelete, users }) {
   const [form, setForm] = useState({
-    title: task.title,
-    description: task.description ?? "",
-    status: task.status,
-    assigned_to: task.assigned_to ?? "",
+    title: task.title, description: task.description ?? "",
+    status: task.status, assigned_to: task.assigned_to ?? "",
   });
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [saving, setSaving]           = useState(false);
+  const [deleting, setDeleting]       = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   async function handleSave() {
@@ -159,29 +144,22 @@ function EditTaskModal({ task, onClose, onSave, onDelete, users }) {
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
         <h2 className="text-lg font-semibold">Редактировать задачу</h2>
         <TaskFormFields form={form} setForm={setForm} users={users} />
-
         <div className="flex items-center justify-between pt-2">
-          {/* Удаление */}
           {confirmDelete ? (
-            <div className="flex gap-2">
+            <div className="flex gap-2 mr-5">
               <span className="text-xs text-red-500 self-center">Удалить задачу?</span>
               <button onClick={handleDelete} disabled={deleting} className="px-3 py-1.5 text-xs rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition">
                 {deleting ? "..." : "Да"}
               </button>
-              <button onClick={() => setConfirmDelete(false)} className="px-3 py-1.5 text-xs rounded-lg border hover:bg-gray-50 transition">
-                Нет
-              </button>
+              <button onClick={() => setConfirmDelete(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-gray-50 transition">Нет</button>
             </div>
           ) : (
-            <button onClick={() => setConfirmDelete(true)} className="px-3 py-1.5 text-xs rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition">
+            <button onClick={() => setConfirmDelete(true)} className="px-4 py-2 text-xs rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition">
               Удалить
             </button>
           )}
-
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg border hover:bg-gray-50 transition">
-              Отмена
-            </button>
+            <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg border hover:bg-gray-50 transition">Отмена</button>
             <button onClick={handleSave} disabled={saving || !form.title.trim()} className="px-4 py-2 text-sm rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50 transition">
               {saving ? "Сохранение..." : "Сохранить"}
             </button>
@@ -192,15 +170,9 @@ function EditTaskModal({ task, onClose, onSave, onDelete, users }) {
   );
 }
 
-// ── Avatar ─────────────────────────────────────────────
 function Avatar({ user }) {
   if (!user) return null;
-  const initials =
-    [user.first_name, user.last_name]
-      .filter(Boolean)
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase() || "?";
+  const initials = [user.first_name, user.last_name].filter(Boolean).map((n) => n[0]).join("").toUpperCase() || "?";
   return (
     <div
       title={[user.first_name, user.last_name].filter(Boolean).join(" ") || user.email}
@@ -211,7 +183,6 @@ function Avatar({ user }) {
   );
 }
 
-// ── Card ───────────────────────────────────────────────
 const TaskCard = ({ task, columnId, style, assignedUser, onEdit }) => {
   const cardStyle = COLUMN_CARD_STYLE[columnId] ?? { bg: "#94A3B8", text: "#fff" };
   return (
@@ -219,14 +190,10 @@ const TaskCard = ({ task, columnId, style, assignedUser, onEdit }) => {
       <div className="flex items-start justify-between gap-2">
         <p className="font-medium text-sm flex-1">{task.title}</p>
         <div className="flex items-center gap-1 shrink-0">
-          {/* Кнопка редактирования */}
           {onEdit && (
             <button
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit();
-              }}
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
               className="opacity-0 group-hover:opacity-100 transition w-5 h-5 flex items-center justify-center rounded bg-white/20 hover:bg-white/40 text-xs"
             >
               ✏️
@@ -240,10 +207,8 @@ const TaskCard = ({ task, columnId, style, assignedUser, onEdit }) => {
   );
 };
 
-// ── Sortable Card ──────────────────────────────────────
 const SortableItem = ({ task, columnId, assignedUser, onEdit }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(task.id) });
-
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing mb-2">
       <TaskCard task={task} columnId={columnId} assignedUser={assignedUser} onEdit={onEdit} style={{ opacity: isDragging ? 0.3 : 1 }} />
@@ -251,35 +216,29 @@ const SortableItem = ({ task, columnId, assignedUser, onEdit }) => {
   );
 };
 
-// ── Droppable Column ───────────────────────────────────
 const DroppableColumn = ({ id, children }) => {
   const { setNodeRef } = useDroppable({ id });
-  return (
-    <div ref={setNodeRef} className="min-h-16 flex-1 rounded">
-      {children}
-    </div>
-  );
+  return <div ref={setNodeRef} className="min-h-16 flex-1 rounded">{children}</div>;
 };
 
 // ── Board ──────────────────────────────────────────────
 const Board = () => {
-  const [columns, setColumns] = useState({
-    created: [],
-    in_progress: [],
-    review: [],
-    changes: [],
-    done: [],
-  });
-  const [users, setUsers] = useState([]);
+  const { user: currentUser } = useAuth();
+
+  const [columns, setColumns]   = useState({ created: [], in_progress: [], review: [], changes: [], done: [] });
+  const [allTasks, setAllTasks] = useState([]); // все задачи без фильтра
+  const [users, setUsers]       = useState([]);
   const [activeTask, setActiveTask] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [modal, setModal] = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState(null);
+  const [modal, setModal]       = useState(null);
   const [editTask, setEditTask] = useState(null);
+
+  // ── Фильтр: "all" | "assigned_to_me" | "created_by_me"
+  const [filter, setFilter] = useState("all");
 
   const sensors = useSensors(useSensor(PointerSensor));
 
-  // ── Fetch ────────────────────────────────────────────
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     const [{ data: tasks, error: tasksError }, { data: profiles }] = await Promise.all([
@@ -287,68 +246,49 @@ const Board = () => {
       client.from("profiles").select("id, first_name, last_name, email"),
     ]);
 
-    if (tasksError) {
-      setError(tasksError.message);
-      setLoading(false);
-      return;
-    }
+    if (tasksError) { setError(tasksError.message); setLoading(false); return; }
 
     setUsers(profiles ?? []);
-
-    const grouped = { created: [], in_progress: [], review: [], changes: [], done: [] };
-    tasks.forEach((task) => {
-      if (grouped[task.status]) grouped[task.status].push(task);
-    });
-    setColumns(grouped);
+    setAllTasks(tasks ?? []);
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+  useEffect(() => { fetchTasks(); }, [fetchTasks]);
+
+  // ── Применяем фильтр ──────────────────────────────────
+  const filteredColumns = useMemo(() => {
+    const grouped = { created: [], in_progress: [], review: [], changes: [], done: [] };
+
+    let tasks = allTasks;
+    if (filter === "assigned_to_me") {
+      tasks = allTasks.filter((t) => t.assigned_to === currentUser?.id);
+    } else if (filter === "created_by_me") {
+      tasks = allTasks.filter((t) => t.created_by === currentUser?.id);
+    }
+
+    tasks.forEach((task) => {
+      if (grouped[task.status]) grouped[task.status].push(task);
+    });
+    return grouped;
+  }, [allTasks, filter, currentUser]);
+
+  // Синхронизируем columns с filteredColumns для DnD
+  useEffect(() => { setColumns(filteredColumns); }, [filteredColumns]);
 
   const getUserById = (id) => users.find((u) => u.id === id) ?? null;
 
-  // ── Add ──────────────────────────────────────────────
   function handleTaskAdded(newTask) {
-    setColumns((prev) => ({
-      ...prev,
-      [newTask.status]: [...prev[newTask.status], newTask],
-    }));
+    setAllTasks((prev) => [...prev, newTask]);
   }
 
-  // ── Edit save ─────────────────────────────────────────
   function handleTaskSaved(taskId, payload) {
-    setColumns((prev) => {
-      const next = { ...prev };
-      // Ищем задачу во всех колонках
-      for (const col in next) {
-        const idx = next[col].findIndex((t) => t.id === taskId);
-        if (idx !== -1) {
-          const oldTask = next[col][idx];
-          // Если статус изменился — перемещаем в нужную колонку
-          if (oldTask.status !== payload.status) {
-            next[col] = next[col].filter((t) => t.id !== taskId);
-            next[payload.status] = [...next[payload.status], { ...oldTask, ...payload }];
-          } else {
-            next[col] = next[col].map((t) => (t.id === taskId ? { ...t, ...payload } : t));
-          }
-          break;
-        }
-      }
-      return next;
-    });
+    setAllTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, ...payload } : t));
   }
 
-  // ── Delete ────────────────────────────────────────────
-  function handleTaskDeleted(taskId, status) {
-    setColumns((prev) => ({
-      ...prev,
-      [status]: prev[status].filter((t) => t.id !== taskId),
-    }));
+  function handleTaskDeleted(taskId) {
+    setAllTasks((prev) => prev.filter((t) => t.id !== taskId));
   }
 
-  // ── Helpers ──────────────────────────────────────────
   const findColumnByTaskId = (taskId) => {
     for (const columnId in columns) {
       if (columns[columnId].some((t) => String(t.id) === taskId)) return columnId;
@@ -356,7 +296,6 @@ const Board = () => {
     return null;
   };
 
-  // ── Drag Start ───────────────────────────────────────
   const handleDragStart = (event) => {
     const activeId = String(event.active.id);
     const columnId = findColumnByTaskId(activeId);
@@ -365,14 +304,13 @@ const Board = () => {
     if (task) setActiveTask({ task, columnId });
   };
 
-  // ── Drag End ─────────────────────────────────────────
   const handleDragEnd = async (event) => {
     setActiveTask(null);
     const { active, over } = event;
     if (!over) return;
 
     const activeId = String(active.id);
-    const overId = String(over.id);
+    const overId   = String(over.id);
 
     const sourceColumnId = findColumnByTaskId(activeId);
     if (!sourceColumnId) return;
@@ -381,37 +319,65 @@ const Board = () => {
     if (!destColumnId) return;
 
     if (sourceColumnId === destColumnId) {
-      const tasks = columns[sourceColumnId];
+      const tasks    = columns[sourceColumnId];
       const oldIndex = tasks.findIndex((t) => String(t.id) === activeId);
       const newIndex = tasks.findIndex((t) => String(t.id) === overId);
       if (oldIndex !== newIndex && newIndex !== -1) {
-        setColumns({ ...columns, [sourceColumnId]: arrayMove(tasks, oldIndex, newIndex) });
+        const reordered = arrayMove(tasks, oldIndex, newIndex);
+        setColumns({ ...columns, [sourceColumnId]: reordered });
+        setAllTasks((prev) => {
+          const ids = reordered.map((t) => t.id);
+          return [...prev.filter((t) => !ids.includes(t.id)), ...reordered];
+        });
       }
     } else {
       const sourceTasks = [...columns[sourceColumnId]];
-      const destTasks = [...columns[destColumnId]];
+      const destTasks   = [...columns[destColumnId]];
       const sourceIndex = sourceTasks.findIndex((t) => String(t.id) === activeId);
       const [movedTask] = sourceTasks.splice(sourceIndex, 1);
-      destTasks.push({ ...movedTask, status: destColumnId });
+      const updated = { ...movedTask, status: destColumnId };
+      destTasks.push(updated);
 
       setColumns({ ...columns, [sourceColumnId]: sourceTasks, [destColumnId]: destTasks });
+      setAllTasks((prev) => prev.map((t) => t.id === movedTask.id ? updated : t));
 
       const { error } = await client.from("tasks").update({ status: destColumnId }).eq("id", movedTask.id);
-
-      if (error) {
-        alert("Ошибка: " + error.message);
-        fetchTasks();
-      }
+      if (error) { alert("Ошибка: " + error.message); fetchTasks(); }
     }
   };
 
   if (loading) return <div className="p-4 text-sm text-gray-400">Загрузка...</div>;
-  if (error) return <div className="p-4 text-sm text-red-500">Ошибка: {error}</div>;
+  if (error)   return <div className="p-4 text-sm text-red-500">Ошибка: {error}</div>;
 
   return (
     <>
-      <div className="flex justify-end px-4 pt-4">
-        <button onClick={() => setModal({ defaultStatus: "created" })} className="px-4 py-2 text-sm rounded-lg bg-black text-white hover:bg-gray-800 transition">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between px-4 pt-4">
+        {/* Фильтр */}
+        <div className="flex gap-2">
+          {[
+            { value: "all",            label: "Все задачи" },
+            { value: "assigned_to_me", label: "Назначены мне" },
+            { value: "created_by_me",  label: "Созданы мной" },
+          ].map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setFilter(value)}
+              className={`px-3 py-1.5 text-xs rounded-lg border transition ${
+                filter === value
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setModal({ defaultStatus: "created" })}
+          className="px-4 py-2 text-sm rounded-lg bg-black text-white hover:bg-gray-800 transition"
+        >
           + Добавить задачу
         </button>
       </div>
@@ -424,7 +390,6 @@ const Board = () => {
                 <h2 className="font-bold text-sm">{COLUMN_LABELS[columnId]}</h2>
                 <span className="text-xs bg-white rounded-full px-2 py-0.5 text-gray-500 font-medium">{tasks.length}</span>
               </div>
-
               <SortableContext items={tasks.map((t) => String(t.id))} strategy={verticalListSortingStrategy}>
                 <DroppableColumn id={columnId}>
                   {tasks.map((task) => (
@@ -449,7 +414,6 @@ const Board = () => {
       </div>
 
       {modal && <AddTaskModal defaultStatus={modal.defaultStatus} onClose={() => setModal(null)} onAdd={handleTaskAdded} users={users} />}
-
       {editTask && <EditTaskModal task={editTask} users={users} onClose={() => setEditTask(null)} onSave={handleTaskSaved} onDelete={handleTaskDeleted} />}
     </>
   );
