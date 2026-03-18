@@ -1,22 +1,19 @@
-"use client";
-
-import React from "react";
-
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/comp/AppSidebar";
-import Charts from "@/components/comp/Charts";
+import { UsersTable } from "@/components/comp/Users";
 
-const Dashboard = () => {
+export default function Tasks() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main className="p-4 w-full ">
+
+      <main className="py-4 px-5 w-full">
         <SidebarTrigger />
 
-        <Charts />
+        <span className="ml-10 text-xl absolute top-4">Users</span>
+
+        <UsersTable />
       </main>
     </SidebarProvider>
   );
-};
-
-export default Dashboard;
+}

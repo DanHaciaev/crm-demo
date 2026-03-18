@@ -19,9 +19,10 @@ export function AppSidebar() {
   const today = format(new Date(), "dd MMM yyyy")
 
   const links = [
-    { name: "Dashboard", href: "/" },
+    { name: "Dashboard", href: "/dashboard" },
     { name: "Clients", href: "/clients" },
     { name: "Tasks", href: "/tasks" },
+    { name: "Users", href: "/users" },
   ]
 
   return (
