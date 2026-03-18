@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+ 
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,43 +14,70 @@ const STATUS_LABEL = {
   done:        { label: "Готово",    className: "bg-green-100 text-green-700" },
 };
 
+function FileItem({ file }) {
+  const url = `http://13.48.58.246/files/${file.fullName}`;
+  return (
+    <div className="flex items-center justify-between py-2 border-b last:border-0">
+      <div className="flex items-center gap-2">
+        <span className="text-lg">📄</span>
+        <div>
+          <p className="text-sm font-medium">{file.name}</p>
+          <p className="text-xs text-gray-400">{(file.size / 1024).toFixed(1)} KB</p>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-3 py-1 text-xs rounded-md border hover:bg-gray-50 transition"
+        >
+          Открыть
+        </a>
+        <a
+          href={url}
+          download={file.name}
+          className="px-3 py-1 text-xs rounded-md border border-black bg-black text-white hover:bg-gray-800 transition"
+        >
+          Скачать
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default function TaskComponent() {
   const { id }   = useParams();
   const router   = useRouter();
-  const [task, setTask]       = useState(null);
+  const [task, setTask]         = useState(null);
   const [assigned, setAssigned] = useState(null);
   const [createdBy, setCreatedBy] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState(null);
+
+  // Файлы
+  const [files, setFiles]         = useState([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver]   = useState(false);
 
   useEffect(() => {
     async function fetchTask() {
       const { data, error } = await client
-        .from("tasks")
-        .select("*")
-        .eq("id", id)
-        .single();
+        .from("tasks").select("*").eq("id", id).single();
 
       if (error) { setError(error.message); setLoading(false); return; }
       setTask(data);
 
-      // Загружаем исполнителя
       if (data.assigned_to) {
-        const { data: profile } = await client
-          .from("profiles")
-          .select("first_name, last_name, email")
-          .eq("id", data.assigned_to)
-          .single();
+        const { data: profile } = await client.from("profiles")
+          .select("first_name, last_name, email").eq("id", data.assigned_to).single();
         setAssigned(profile);
       }
 
-      // Загружаем создателя
       if (data.created_by) {
-        const { data: profile } = await client
-          .from("profiles")
-          .select("first_name, last_name, email")
-          .eq("id", data.created_by)
-          .single();
+        const { data: profile } = await client.from("profiles")
+          .select("first_name, last_name, email").eq("id", data.created_by).single();
         setCreatedBy(profile);
       }
 
@@ -56,6 +85,42 @@ export default function TaskComponent() {
     }
     fetchTask();
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    fetchFiles();
+  }, [id]);
+
+  async function fetchFiles() {
+    setFilesLoading(true);
+    const res  = await fetch(`/api/get-files?taskId=${id}`);
+    const data = await res.json();
+    setFiles(Array.isArray(data) ? data : []);
+    setFilesLoading(false);
+  }
+
+  async function uploadFiles(fileList) {
+    setUploading(true);
+    for (const file of Array.from(fileList)) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("taskId", id);
+
+      await fetch("/api/upload-file", { method: "POST", body: formData });
+    }
+    await fetchFiles();
+    setUploading(false);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files);
+  }
+
+  function handleFileInput(e) {
+    if (e.target.files.length) uploadFiles(e.target.files);
+  }
 
   if (loading) return <div className="p-8 text-sm text-gray-400">Загрузка...</div>;
   if (error)   return <div className="p-8 text-sm text-red-500">Ошибка: {error}</div>;
@@ -70,7 +135,7 @@ export default function TaskComponent() {
   }
 
   return (
-    <div className=" p-8">
+    <div className="p-8">
       {/* Назад */}
       <button
         onClick={() => router.back()}
@@ -96,7 +161,7 @@ export default function TaskComponent() {
       </div>
 
       {/* Детали */}
-      <div className="border rounded-xl p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="border rounded-xl p-5 grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
           <p className="text-xs text-gray-400">Исполнитель</p>
           <p className="text-sm font-medium mt-0.5">{userName(assigned)}</p>
@@ -113,6 +178,47 @@ export default function TaskComponent() {
           <p className="text-xs text-gray-400">ID задачи</p>
           <p className="text-sm font-medium mt-0.5 font-mono">{task.id}</p>
         </div>
+      </div>
+
+      {/* Файлы */}
+      <div className="border rounded-xl p-5">
+        <h2 className="text-sm font-medium text-gray-500 mb-4">Файлы</h2>
+
+        {/* Drag & Drop зона */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-xl p-8 text-center transition mb-4 ${
+            dragOver ? "border-black bg-gray-50" : "border-gray-200"
+          }`}
+        >
+          <p className="text-sm text-gray-400 mb-2">
+            {uploading ? "Загрузка..." : "Перетащи файлы сюда или"}
+          </p>
+          {!uploading && (
+            <label className="cursor-pointer px-4 py-2 text-sm rounded-lg bg-black text-white hover:bg-gray-800 transition">
+              Выбрать файлы
+              <input
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleFileInput}
+              />
+            </label>
+          )}
+        </div>
+
+        {/* Список файлов */}
+        {filesLoading ? (
+          <p className="text-sm text-gray-400">Загрузка файлов...</p>
+        ) : files.length === 0 ? (
+          <p className="text-sm text-gray-400">Файлов пока нет</p>
+        ) : (
+          <div>
+            {files.map((f, i) => <FileItem key={i} file={f} />)}
+          </div>
+        )}
       </div>
     </div>
   );
