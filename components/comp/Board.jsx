@@ -274,7 +274,7 @@ const Board = () => {
         </button>
       </div>
 
-      <div className="flex gap-4 p-4 overflow-x-auto">
+      <div className="grid grid-cols-5 gap-4 p-4">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -282,7 +282,7 @@ const Board = () => {
           onDragEnd={handleDragEnd}
         >
           {Object.entries(columns).map(([columnId, tasks]) => (
-            <div key={columnId} className="flex flex-col bg-gray-100 rounded-lg p-3 min-w-68">
+            <div key={columnId} className="flex flex-col bg-gray-100 rounded-lg p-3 min-w-0">
               {/* Заголовок колонки */}
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-bold text-sm">{COLUMN_LABELS[columnId]}</h2>
