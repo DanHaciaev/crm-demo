@@ -9,6 +9,7 @@ const STATUS_LABEL = {
   renamed:  { label: "переименован", className: "text-yellow-600" },
 };
 
+
 export default function GitReport() {
   const [commits, setCommits] = useState([]);
   const [loading, setLoading] = useState(true);
