@@ -15,7 +15,7 @@ const STATUS_LABEL = {
 };
 
 function FileItem({ file, onDelete }) {
-  const url = `http://13.63.74.74/files/${file.fullName}`;
+  const url = `https://13.63.74.74/files/${file.fullName}`;
   const [deleting, setDeleting] = useState(false);
   const [confirm, setConfirm] = useState(false);
 
