@@ -9,11 +9,7 @@ export async function GET(request) {
     return NextResponse.json({ error: "taskId обязателен" }, { status: 400 });
   }
 
-  console.log("FTP_HOST:", process.env.FTP_HOST);
-  console.log("FTP_USER:", process.env.FTP_USER);
-
   const client = new ftp.Client();
-  client.ftp.verbose = true;
 
   try {
     await client.access({
@@ -26,15 +22,21 @@ export async function GET(request) {
     const list = await client.list();
     const files = list
       .filter((f) => f.name.startsWith(`${taskId}_`))
-      .map((f) => ({
-        name:     f.name.replace(`${taskId}_`, "").replace(/^\d+_/, ""),
-        fullName: f.name,
-        size:     f.size,
-      }));
+      .map((f) => {
+        // Извлекаем timestamp из имени файла — он там есть всегда
+        const parts     = f.name.split("_");
+        const timestamp = parts[1] ? parseInt(parts[1]) : null;
+
+        return {
+          name:       f.name.replace(`${taskId}_`, "").replace(/^\d+_/, ""),
+          fullName:   f.name,
+          size:       f.size,
+          modifiedAt: timestamp ? new Date(timestamp).toISOString() : null,
+        };
+      });
 
     return NextResponse.json(files);
   } catch (err) {
-    console.error("FTP error:", err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });
   } finally {
     client.close();

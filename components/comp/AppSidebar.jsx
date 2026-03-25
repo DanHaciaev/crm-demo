@@ -24,6 +24,7 @@ export function AppSidebar() {
     { name: "Tasks", href: "/tasks" },
     { name: "Users", href: "/users" },
     { name: "Report", href: "/report" },
+    { name: "Documents", href: "/documents" },
   ]
 
   return (
